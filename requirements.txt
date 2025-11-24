@@ -1,0 +1,7 @@
+moviepy==1.0.3
+gTTS
+requests
+decorator<5,>=4.0.2
+imageio
+tqdm
+numpy
