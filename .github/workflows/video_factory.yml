@@ -1,21 +1,21 @@
 name: Video Factory
 
 on:
-  workflow_dispatch: # Allows you to click a button to generate a video
+  workflow_dispatch:
 
 jobs:
   generate-video:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04 # We use an older, more stable Linux version for MoviePy
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Install System Dependencies (ImageMagick)
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y imagemagick
-          # Fix for ImageMagick policy (allows text processing)
+          # FORCE PERMISSIONS FOR TEXT GENERATION
           sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
 
       - name: Set up Python
@@ -25,7 +25,7 @@ jobs:
 
       - name: Install Python Libraries
         run: |
-          pip install -r requirements.txt
+          pip install moviepy==1.0.3 gTTS requests decorator==4.4.2 imageio tqdm numpy
 
       - name: Run Video Generator
         run: python maker.py
