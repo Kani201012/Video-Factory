@@ -1,46 +1,67 @@
 import random
 import os
+import glob
 from gtts import gTTS
 from moviepy.editor import *
-# We do not need to specify ImageMagick path for Linux/GitHub, it finds it automatically.
-
-# --- CONTENT ---
-FACT_TEXT = "Did you know? Octopuses have three hearts. Two pump blood to the gills, while the third pumps it to the rest of the body."
 
 def create_short():
-    print("1. Generating Voiceover...")
-    tts = gTTS(text=FACT_TEXT, lang='en', slow=False)
-    tts.save("voice.mp3")
+    # --- 1. LOAD FACTS FROM FILE ---
+    try:
+        with open("facts.txt", "r", encoding="utf-8") as f:
+            # Read lines and remove empty ones
+            facts = [line.strip() for line in f.readlines() if line.strip()]
+    except FileNotFoundError:
+        print("❌ ERROR: facts.txt not found! Please upload it.")
+        return
+
+    if not facts:
+        print("❌ ERROR: facts.txt is empty!")
+        return
+
+    # Pick ONE random fact
+    fact_text = random.choice(facts)
+    print(f"1. Selected Fact: {fact_text}")
     
-    print("2. Loading Files...")
+    # --- 2. GENERATE AUDIO ---
+    print("2. Generating Voiceover...")
+    tts = gTTS(text=fact_text, lang='en', slow=False)
+    tts.save("voice.mp3")
     audio_clip = AudioFileClip("voice.mp3")
     
-    # We will assume you uploaded one background video named 'bg1.mp4'
-    # If you have more, add them to the list
-    bg_files = ["bg1.mp4"] 
-    selected_bg = random.choice(bg_files)
+    # --- 3. PICK RANDOM BACKGROUND ---
+    # This looks for ANY file starting with 'bg' and ending in '.mp4'
+    # It works for bg1.mp4, bg2.mp4 ... bg100.mp4
+    available_bgs = glob.glob("bg*.mp4")
+    
+    if not available_bgs:
+        print("❌ ERROR: No background videos found! Upload bg1.mp4, bg2.mp4, etc.")
+        return
+        
+    selected_bg = random.choice(available_bgs)
+    print(f"3. Using Background: {selected_bg}")
     
     video_clip = VideoFileClip(selected_bg)
     
-    print("3. Editing Video...")
-    # Resize to HD Vertical
-    # Note: If your source video is small, this might pixelate it, but it works for testing
+    # --- 4. EDITING ---
+    # Resize to Vertical (9:16)
     video_clip = video_clip.resize(height=1920)
     video_clip = video_clip.crop(x1=None, y1=None, x2=None, y2=None, width=1080, height=1920, x_center=1080/2, y_center=1920/2)
+    
+    # Loop video to match audio length
     final_clip = video_clip.loop(duration=audio_clip.duration + 1.5)
     
-    print("4. Adding Text...")
-    # Linux servers handle fonts differently. We use 'Liberation-Sans-Bold' which is standard on Linux.
-    txt_clip = TextClip(FACT_TEXT, fontsize=70, color='white', font='Liberation-Sans-Bold', method='caption', size=(900, 1500))
+    # --- 5. ADD TEXT ---
+    # White text with black outline
+    txt_clip = TextClip(fact_text, fontsize=70, color='white', stroke_color='black', stroke_width=2, font='Liberation-Sans-Bold', method='caption', size=(900, 1500))
     txt_clip = txt_clip.set_position('center').set_duration(audio_clip.duration + 1.5)
     
     final_video = CompositeVideoClip([final_clip, txt_clip])
     final_video = final_video.set_audio(audio_clip)
     
-    print("5. Rendering (This will take time)...")
-    # We use 'output.mp4' as the filename
+    # --- 6. EXPORT ---
+    print("4. Rendering...")
     final_video.write_videofile("output.mp4", fps=24, codec='libx264', audio_codec='aac')
-    print("✅ DONE! Video Saved.")
+    print("✅ Video Generated Successfully!")
 
 if __name__ == "__main__":
     create_short()
