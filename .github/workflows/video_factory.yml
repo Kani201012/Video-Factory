@@ -1,6 +1,9 @@
 name: Video Factory
 
 on:
+  schedule:
+    # Runs at 08:00 UTC every day (Adjust to your morning)
+    - cron: '0 8 * * *'
   workflow_dispatch:
 
 jobs:
